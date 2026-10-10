@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guia de Pesca Inteligente v3</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+            max-width: 550px;
+            width: 100%;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        h1 { font-size: 2rem; margin-bottom: 5px; color: #4fc3f7; }
+        p { color: #e0e0e0; font-size: 1.05rem; margin-top: 5px; }
+        .step { display: none; }
+        .step.active { display: block; }
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+        button {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 14px 10px;
+            font-size: 0.95rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        button:hover:not(:disabled) { background: #4fc3f7; color: #0f2027; font-weight: bold; transform: translateY(-2px); }
+        button:disabled { opacity: 0.3; cursor: not-allowed; }
+        .result-box { background: rgba(0, 0, 0, 0.5); padding: 20px; border-radius: 8px; text-align: left; margin-top: 20px; display: none; }
+        .result-box h3 { color: #4fc3f7; margin-top: 0; margin-bottom: 15px; text-align: center;}
+        .restart-btn { background: #ffb300; color: #212121; font-weight: bold; margin-top: 20px; width: 100%; }
+        .badge { background: #4fc3f7; color: #0f2027; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🎣 Guia de Pesca Inteligente</h1>
+    <p id="subtitulo">Técnicas e equipamentos reais e exclusivos por região do Brasil!</p>
+
+    <!-- PASSO 1: REGIAO -->
+    <div id="step1" class="step active">
+        <p><strong>Passo 1:</strong> Qual é o Estado da pescaria?</p>
+        <div class="btn-grid">
+            <button onclick="selecionarEstado('Paraná')">🌲 Paraná</button>
+            <button onclick="selecionarEstado('São Paulo')">🏙️ São Paulo</button>
+            <button onclick="selecionarEstado('Santa Catarina')">🏖️ Santa Catarina</button>
+            <button onclick="selecionarEstado('Mato Grosso do Sul')">🐊 Mato Grosso do Sul</button>
+            <button onclick="selecionarEstado('Amazonas')">🌳 Amazonas</button>
+        </div>
+    </div>
+
+    <!-- PASSO 2: LUGAR -->
+    <div id="step2" class="step">
+        <p><strong>Passo 2:</strong> Onde você vai pescar in <span id="estado-selecionado" class="badge"></span>?</p>
+        <div class="btn-grid">
+            <button id="btn-mar" onclick="selecionarLugar('Mar')">⚓ Mar / Praia</button>
+            <button onclick="selecionarLugar('Rio')">🏞️ Rio Corrente</button>
+            <button onclick="selecionarLugar('Represa')">🌊 Represa / Açude</button>
+            <button onclick="selecionarLugar('Pesqueiro')">🐟 Pesqueiro</button>
+        </div>
+    </div>
+
+    <!-- PASSO 3: PEIXE DINÂMICO -->
+    <div id="step3" class="step">
+        <p><strong>Passo 3:</strong> Escolha o seu peixe alvo regional:</p>
+        <div id="peixes-dinamicos" class="btn-grid"></div>
+    </div>
+
+    <!-- RESULTADO -->
+    <div id="result" class="result-box">
+        <h3>🎯 Seu Planejamento Customizado</h3>
+        <p id="resumo-escolhas"></p>
+        <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.2);">
+        <p><strong>📦 Equipamento Recomendado nesta Região:</strong> <span id="eq-tipo"></span></p>
+        <p><strong>🪱 Melhor Isca para este Estado:</strong> <span id="isca-tipo"></span></p>
+        <p><strong>🎯 Técnica Local mais Eficiente:</strong> <span id="tecnica-tipo"></span></p>
+        <button class="restart-btn" onclick="restartQuiz()">Nova Rota de Pesca 🔄</button>
+    </div>
+</div>
+
+<script>
+    let escolhas = { estado: '', lugar: '', peixe: '' };
+    let bancoPesca = null;
+
+    fetch('dados-pesca.json')
+        .then(response => response.json())
+        .then(data => { bancoPesca = data; })
+        .catch(err => console.error("Erro ao carregar dados:", err));
+
+    function selecionarEstado(estado) {
+        escolhas.estado = estado;
+        document.getElementById('estado-selecionado').innerText = estado;
+
+        const btnMar = document.getElementById('btn-mar');
+        if (estado === 'Mato Grosso do Sul' || estado === 'Amazonas') {
+            btnMar.disabled = true;
+            btnMar.innerText = "⚓ Sem Mar neste Estado";
+        } else {
+            btnMar.disabled = false;
+            btnMar.innerText = "⚓ Mar / Praia";
+        }
+        irParaPasso(2);
+    }
+
+    function selecionarLugar(lugar) {
+        escolhas.lugar = lugar;
+        const containerPeixes = document.getElementById('peixes-dinamicos');
+        containerPeixes.innerHTML = '';
+
+        if (!bancoPesca) {
+            alert("Aguarde um segundo, as técnicas estão carregando!");
+            return;
+        }
+
+        const peixesDisponiveis = bancoPesca[escolhas.estado][lugar];
+
+        Object.keys(peixesDisponiveis).forEach(peixe => {
+            const btn = document.createElement('button');
+            btn.innerHTML = `🐟 ${peixe}`;
+            btn.onclick = () => mostrarResultado(peixe);
+            containerPeixes.appendChild(btn);
+        });
+
+        irParaPasso(3);
+    }
+
+    function mostrarResultado(peixe) {
+        escolhas.peixe = peixe;
+        document.querySelector('.step.active').classList.remove('active');
+        document.getElementById('subtitulo').style.display = 'none';
+
+        const dadosFinais = bancoPesca[escolhas.estado][escolhas.lugar][peixe];
+        document.getElementById('result').style.display = 'block';
+        document.getElementById('resumo-escolhas').innerHTML = `<strong>Seu Plano:</strong> Visando o <span class="badge">${escolhas.peixe}</span> em <u>${escolhas.lugar}</u> no estado do/da <u>${escolhas.estado}</u>.`;
+
+        document.getElementById('eq-tipo').innerText = dadosFinais.eq;
+        document.getElementById('isca-tipo').innerText = dadosFinais.isca;
+        document.getElementById('tecnica-tipo').innerText = dadosFinais.tec;
+    }
+
+    function irParaPasso(num) {
+        document.querySelector('.step.active').classList.remove('active');
+        document.getElementById('step' + num).classList.add('active');
+    }
+
+    function restartQuiz() {
+        escolhas = { estado: '', lugar: '', peixe: '' };
+        document.getElementById('result').style.display = 'none';
+        document.getElementById('subtitulo').style.display = 'block';
+        irParaPasso(1);
+    }
+</script>
+</body>
+</html>
